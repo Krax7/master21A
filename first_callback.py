@@ -1,0 +1,47 @@
+from dash import Dash, dcc, html
+from dash.dependencies import Input, Output
+import plotly.express as px
+import pandas as pd
+
+df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/gapminderDataFiveYear.csv')
+
+external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+
+app = Dash(external_stylesheets=external_stylesheets)
+
+app.layout = html.Div([
+    dcc.Graph(id='graph-with-slider'),
+    dcc.Slider(
+        id='year-slider',
+        min=df['year'].min(),
+        max=df['year'].max(),
+        value=df['year'].min(),
+        marks={str(year): str(year) for year in df['year'].unique()},
+        step=None
+    )
+], style={'background-color': '#242a44'})
+
+@app.callback(
+    Output(component_id='graph-with-slider', component_property='figure'),
+    Input(component_id='year-slider', component_property='value')
+)
+def update_figure(selected_year):
+    # Filtramos los datos
+    filtered_df = df[df['year'] == selected_year]
+    
+    # Construyamos nuestra gráfica
+    fig = px.scatter(filtered_df,
+                     x='gdpPercap',
+                     y='lifeExp',
+                     size='pop',
+                     color='continent',
+                     hover_name='country',
+                     size_max=55,
+                     log_x=True)
+    
+    fig.update_layout(transition_duration=500)
+    
+    return fig
+
+if __name__ == '__main__':
+    app.run_server(debug=True)
